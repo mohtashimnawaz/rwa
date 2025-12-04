@@ -29,7 +29,7 @@ pub mod rwa {
         property.total_fractions = total_fractions;
         property.fraction_decimal = fraction_decimal;
         property.cum_rent_per_share = 0u128;
-        property.bump = *ctx.bumps.get("property_account").unwrap();
+        property.bump = ctx.bumps.property_account;
         property.metadata_uri = metadata_uri;
 
         // 1) Create fraction mint account (system create_account)
@@ -76,7 +76,6 @@ pub mod rwa {
                 mint: ctx.accounts.usdc_mint.to_account_info(),
                 system_program: ctx.accounts.system_program.to_account_info(),
                 token_program: ctx.accounts.token_program.to_account_info(),
-                rent: ctx.accounts.rent.to_account_info(),
             },
         ))?;
 
@@ -90,7 +89,6 @@ pub mod rwa {
                 mint: ctx.accounts.nft_mint.to_account_info(),
                 system_program: ctx.accounts.system_program.to_account_info(),
                 token_program: ctx.accounts.token_program.to_account_info(),
-                rent: ctx.accounts.rent.to_account_info(),
             },
         ))?;
 
@@ -117,7 +115,6 @@ pub mod rwa {
         require!(ctx.accounts.authority.key() == property.authority, ErrorCode::Unauthorized);
 
         // Mint fractions via CPI - mint authority is a PDA; sign with its seeds
-        let seeds = &[b"fraction_authority", property.to_account_info().key.as_ref()];
         let (_pda, bump) = Pubkey::find_program_address(&[b"fraction_authority", property.to_account_info().key.as_ref()], ctx.program_id);
         let signer_seeds: &[&[&[u8]]] = &[&[b"fraction_authority", property.to_account_info().key.as_ref(), &[bump]]];
 
@@ -317,6 +314,7 @@ pub mod rwa {
         require!(fraction_supply == 0, ErrorCode::FractionsNotBurned);
 
         // Transfer NFT from vault to authority
+        let nft_mint_key = ctx.accounts.nft_mint.key();
         let cpi_accounts = Transfer {
             from: ctx.accounts.nft_vault_ata.to_account_info(),
             to: ctx.accounts.authority_nft_ata.to_account_info(),
@@ -324,8 +322,8 @@ pub mod rwa {
         };
         
         // Sign with nft_vault PDA seeds
-        let (_pda, bump) = Pubkey::find_program_address(&[b"nft_vault", ctx.accounts.nft_mint.key().as_ref()], ctx.program_id);
-        let signer_seeds: &[&[&[u8]]] = &[&[b"nft_vault", ctx.accounts.nft_mint.key().as_ref(), &[bump]]];
+        let (_pda, bump) = Pubkey::find_program_address(&[b"nft_vault", nft_mint_key.as_ref()], ctx.program_id);
+        let signer_seeds: &[&[&[u8]]] = &[&[b"nft_vault", nft_mint_key.as_ref(), &[bump]]];
         token::transfer(CpiContext::new_with_signer(ctx.accounts.token_program.to_account_info(), cpi_accounts, signer_seeds), 1)?;
 
         Ok(())
@@ -362,7 +360,7 @@ pub struct HolderState {
 #[derive(Accounts)]
 #[instruction(metadata_uri: String, total_fractions: u64, fraction_decimal: u8)]
 pub struct InitializeProperty<'info> {
-    #[account(init, payer = authority, space = 8 + 32 + 32 + 32 + 32 + 8 + 1 + 16 + 1 + 4 + 200)]
+    #[account(init, payer = authority, space = 8 + 32 + 32 + 32 + 32 + 8 + 1 + 16 + 1 + 4 + 200, seeds = [b"property", nft_mint.key().as_ref()], bump)]
     pub property_account: Account<'info, PropertyAccount>,
 
     #[account(mut)]
@@ -449,7 +447,7 @@ pub struct BuyFractions<'info> {
 
     #[account(init_if_needed, payer = buyer, space = 8 + 32 + 32 + 8 + 16 + 16 + 1, seeds = [b"holder", buyer.key().as_ref(), property_account.key().as_ref()], bump)]
     pub buyer_holder: Account<'info, HolderState>,
-    #[account(init_if_needed, payer = buyer, space = 8 + 32 + 32 + 8 + 16 + 16 + 1, seeds = [b"holder", seller.key().as_ref(), property_account.key().as_ref()], bump)]
+    #[account(init_if_needed, payer = seller, space = 8 + 32 + 32 + 8 + 16 + 16 + 1, seeds = [b"holder", seller.key().as_ref(), property_account.key().as_ref()], bump)]
     pub seller_holder: Account<'info, HolderState>,
 
     pub token_program: Program<'info, Token>,
@@ -461,9 +459,20 @@ pub struct TransferFractions<'info> {
     #[account(mut)]
     pub property_account: Account<'info, PropertyAccount>,
 
-    #[account(mut, has_one = holder)]
+    #[account(
+        mut,
+        seeds = [b"holder", source_owner.key().as_ref(), property_account.key().as_ref()],
+        bump,
+        constraint = source_holder.holder == source_owner.key()
+    )]
     pub source_holder: Account<'info, HolderState>,
-    #[account(init_if_needed, payer = dest_owner, space = 8 + 32 + 32 + 8 + 16 + 16 + 1, seeds = [b"holder", dest_owner.key().as_ref(), property_account.key().as_ref()], bump)]
+    #[account(
+        init_if_needed,
+        payer = dest_owner,
+        space = 8 + 32 + 32 + 8 + 16 + 16 + 1,
+        seeds = [b"holder", dest_owner.key().as_ref(), property_account.key().as_ref()],
+        bump
+    )]
     pub dest_holder: Account<'info, HolderState>,
 
     #[account(mut)]
