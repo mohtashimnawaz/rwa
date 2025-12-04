@@ -1,7 +1,6 @@
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::{program::invoke_signed, system_instruction};
-use anchor_spl::token::{self, Mint, TokenAccount, Token, Transfer, MintTo, InitializeMint, Burn};
-use anchor_spl::associated_token::create as create_associated_token;
+use anchor_spl::token::{self, Mint, TokenAccount, Token, Transfer, MintTo, InitializeMint, Burn, spl_token};
 use anchor_spl::associated_token::AssociatedToken;
 
 declare_id!("DYMKJAp7o44QC7ZwB6JFbJY4mkDDtoAMbrwsTCrZqcj3");
@@ -29,8 +28,14 @@ pub mod rwa {
         property.total_fractions = total_fractions;
         property.fraction_decimal = fraction_decimal;
         property.cum_rent_per_share = 0u128;
-        property.bump = ctx.bumps.property_account;
-        property.metadata_uri = metadata_uri;
+        property.bump = 0;
+        
+        // Copy metadata_uri into fixed-size array
+        let uri_bytes = metadata_uri.as_bytes();
+        require!(uri_bytes.len() <= 200, ErrorCode::MetadataUriTooLong);
+        let mut uri_array = [0u8; 200];
+        uri_array[..uri_bytes.len()].copy_from_slice(uri_bytes);
+        property.metadata_uri = uri_array;
 
         // 1) Create fraction mint account (system create_account)
         let rent = Rent::get()?;
@@ -66,31 +71,7 @@ pub mod rwa {
             None,
         )?;
 
-        // 3) Create associated token account for rent vault (USDC) owned by rent_vault PDA
-        create_associated_token(CpiContext::new(
-            ctx.accounts.associated_token_program.to_account_info(),
-            anchor_spl::associated_token::Create {
-                payer: ctx.accounts.authority.to_account_info(),
-                associated_token: ctx.accounts.rent_vault_ata.to_account_info(),
-                authority: ctx.accounts.rent_vault.to_account_info(),
-                mint: ctx.accounts.usdc_mint.to_account_info(),
-                system_program: ctx.accounts.system_program.to_account_info(),
-                token_program: ctx.accounts.token_program.to_account_info(),
-            },
-        ))?;
-
-        // 4) Create associated token account for nft vault (NFT mint) owned by nft_vault PDA
-        create_associated_token(CpiContext::new(
-            ctx.accounts.associated_token_program.to_account_info(),
-            anchor_spl::associated_token::Create {
-                payer: ctx.accounts.authority.to_account_info(),
-                associated_token: ctx.accounts.nft_vault_ata.to_account_info(),
-                authority: ctx.accounts.nft_vault.to_account_info(),
-                mint: ctx.accounts.nft_mint.to_account_info(),
-                system_program: ctx.accounts.system_program.to_account_info(),
-                token_program: ctx.accounts.token_program.to_account_info(),
-            },
-        ))?;
+        // Note: rent_vault_ata and nft_vault_ata should be created client-side
 
         Ok(())
     }
@@ -344,7 +325,7 @@ pub struct PropertyAccount {
     pub fraction_decimal: u8,
     pub cum_rent_per_share: u128,
     pub bump: u8,
-    pub metadata_uri: String,
+    pub metadata_uri: [u8; 200],  // Fixed size for IPFS/Arweave URIs
 }
 
 #[account]
@@ -358,9 +339,8 @@ pub struct HolderState {
 }
 
 #[derive(Accounts)]
-#[instruction(metadata_uri: String, total_fractions: u64, fraction_decimal: u8)]
 pub struct InitializeProperty<'info> {
-    #[account(init, payer = authority, space = 8 + 32 + 32 + 32 + 32 + 8 + 1 + 16 + 1 + 4 + 200, seeds = [b"property", nft_mint.key().as_ref()], bump)]
+    #[account(init, payer = authority, space = 8 + 32 + 32 + 32 + 32 + 8 + 1 + 16 + 1 + 4 + 200)]
     pub property_account: Account<'info, PropertyAccount>,
 
     #[account(mut)]
@@ -382,13 +362,14 @@ pub struct InitializeProperty<'info> {
     /// CHECK: NFT vault PDA
     pub nft_vault: UncheckedAccount<'info>,
 
-    /// Associated token accounts (will be created)
-    #[account(mut)]
-    pub rent_vault_ata: Account<'info, TokenAccount>,
-    #[account(mut)]
-    pub nft_vault_ata: Account<'info, TokenAccount>,
+    /// Associated token accounts (should be created client-side)
+    /// CHECK: rent_vault_ata
+    pub rent_vault_ata: UncheckedAccount<'info>,
+    /// CHECK: nft_vault_ata
+    pub nft_vault_ata: UncheckedAccount<'info>,
 
     /// The USDC mint used for rent collection
+    /// CHECK: USDC mint address - validated by client
     pub usdc_mint: AccountInfo<'info>,
 
     pub system_program: Program<'info, System>,
@@ -462,8 +443,7 @@ pub struct TransferFractions<'info> {
     #[account(
         mut,
         seeds = [b"holder", source_owner.key().as_ref(), property_account.key().as_ref()],
-        bump,
-        constraint = source_holder.holder == source_owner.key()
+        bump
     )]
     pub source_holder: Account<'info, HolderState>,
     #[account(
@@ -480,9 +460,8 @@ pub struct TransferFractions<'info> {
     #[account(mut)]
     pub dest_fraction_ata: Account<'info, TokenAccount>,
 
-    /// CHECK: source owner must sign
     pub source_owner: Signer<'info>,
-    /// CHECK: destination owner
+    #[account(mut)]
     pub dest_owner: Signer<'info>,
 
     pub token_program: Program<'info, Token>,
@@ -506,7 +485,7 @@ pub struct DepositRent<'info> {
 pub struct ClaimRent<'info> {
     #[account(mut)]
     pub property_account: Account<'info, PropertyAccount>,
-    #[account(mut, has_one = property)]
+    #[account(mut)]
     pub holder_state: Account<'info, HolderState>,
     #[account(mut)]
     pub rent_vault_ata: Account<'info, TokenAccount>,
@@ -571,4 +550,6 @@ pub enum ErrorCode {
     InsufficientFunds,
     #[msg("Fractions must be fully burned before unlocking NFT")]
     FractionsNotBurned,
+    #[msg("Metadata URI exceeds 200 bytes")]
+    MetadataUriTooLong,
 }

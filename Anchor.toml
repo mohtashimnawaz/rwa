@@ -7,7 +7,6 @@ skip-lint = false
 
 [programs.localnet]
 rwa = "DYMKJAp7o44QC7ZwB6JFbJY4mkDDtoAMbrwsTCrZqcj3"
-real_estate_fractionalizer = "REaLEst8FrAct1on1111111111111111111111111"
 
 [registry]
 url = "https://api.apr.dev"
