@@ -1,0 +1,15 @@
+[package]
+name = "real_estate_fractionalizer"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "real_estate_fractionalizer"
+crate-type = ["cdylib", "lib"]
+
+[dependencies]
+anchor-lang = { version = "0.27.0", features = ["init-if-needed"] }
+anchor-spl = "0.27.0"
+
+[features]
+default = []
