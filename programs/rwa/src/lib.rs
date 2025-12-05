@@ -16,7 +16,7 @@ pub mod rwa {
     #[allow(clippy::too_many_arguments)]
     pub fn initialize_property(
         ctx: Context<InitializeProperty>,
-        metadata_uri: String,
+        metadata_uri: [u8; 200],
         total_fractions: u64,
         fraction_decimal: u8,
     ) -> Result<()> {
@@ -26,16 +26,11 @@ pub mod rwa {
         property.nft_mint = ctx.accounts.nft_mint.key();
         property.fraction_mint = ctx.accounts.fraction_mint.key();
         property.total_fractions = total_fractions;
+        property.minted_fractions = 0;
         property.fraction_decimal = fraction_decimal;
         property.cum_rent_per_share = 0u128;
         property.bump = 0;
-        
-        // Copy metadata_uri into fixed-size array
-        let uri_bytes = metadata_uri.as_bytes();
-        require!(uri_bytes.len() <= 200, ErrorCode::MetadataUriTooLong);
-        let mut uri_array = [0u8; 200];
-        uri_array[..uri_bytes.len()].copy_from_slice(uri_bytes);
-        property.metadata_uri = uri_array;
+        property.metadata_uri = metadata_uri;
 
         // 1) Create fraction mint account (system create_account)
         let rent = Rent::get()?;
@@ -92,8 +87,11 @@ pub mod rwa {
 
     /// Mint fractions into owner's fraction token account. Only property authority may call.
     pub fn mint_fractions(ctx: Context<MintFractions>, amount: u64) -> Result<()> {
-        let property = &ctx.accounts.property_account;
+        let property = &mut ctx.accounts.property_account;
         require!(ctx.accounts.authority.key() == property.authority, ErrorCode::Unauthorized);
+        
+        // Update minted supply
+        property.minted_fractions = property.minted_fractions.checked_add(amount).ok_or(ErrorCode::NumericOverflow)?;
 
         // Mint fractions via CPI - mint authority is a PDA; sign with its seeds
         let (_pda, bump) = Pubkey::find_program_address(&[b"fraction_authority", property.to_account_info().key.as_ref()], ctx.program_id);
@@ -209,9 +207,9 @@ pub mod rwa {
         };
         token::transfer(CpiContext::new(ctx.accounts.token_program.to_account_info(), cpi_accounts), amount)?;
 
-        // cum_rent_per_share += (amount * SCALE) / total_fractions
+        // cum_rent_per_share += (amount * SCALE) / minted_fractions
         let amount_u128 = amount as u128;
-        let total = property.total_fractions as u128;
+        let total = property.minted_fractions as u128;
         require!(total > 0, ErrorCode::NoFractions);
         let increment = amount_u128.checked_mul(SCALE).ok_or(ErrorCode::NumericOverflow)?.checked_div(total).ok_or(ErrorCode::NumericOverflow)?;
         property.cum_rent_per_share = property.cum_rent_per_share.checked_add(increment).ok_or(ErrorCode::NumericOverflow)?;
@@ -223,6 +221,18 @@ pub mod rwa {
     pub fn claim_rent(ctx: Context<ClaimRent>) -> Result<()> {
         let holder = &mut ctx.accounts.holder_state;
         let property = &ctx.accounts.property_account;
+
+        // If holder_state was just initialized, set initial values
+        if holder.balance == 0 && holder.reward_debt == 0 {
+            // Get actual balance from the holder's fraction token account
+            let fraction_balance = ctx.accounts.holder_fraction_ata.amount;
+            holder.holder = ctx.accounts.payer.key();
+            holder.property = property.key();
+            holder.balance = fraction_balance;
+            holder.reward_debt = (fraction_balance as u128).checked_mul(property.cum_rent_per_share).ok_or(ErrorCode::NumericOverflow)?;
+            holder.unclaimed = 0;
+            holder.bump = ctx.bumps.holder_state;
+        }
 
         let balance_u128 = holder.balance as u128;
         let accrued = balance_u128.checked_mul(property.cum_rent_per_share).ok_or(ErrorCode::NumericOverflow)?;
@@ -322,6 +332,7 @@ pub struct PropertyAccount {
     pub nft_mint: Pubkey,
     pub fraction_mint: Pubkey,
     pub total_fractions: u64,
+    pub minted_fractions: u64,  // Track actual circulating supply
     pub fraction_decimal: u8,
     pub cum_rent_per_share: u128,
     pub bump: u8,
@@ -340,7 +351,7 @@ pub struct HolderState {
 
 #[derive(Accounts)]
 pub struct InitializeProperty<'info> {
-    #[account(init, payer = authority, space = 8 + 32 + 32 + 32 + 32 + 8 + 1 + 16 + 1 + 4 + 200)]
+    #[account(init, payer = authority, space = 8 + 32 + 32 + 32 + 32 + 8 + 8 + 1 + 16 + 1 + 4 + 200)]
     pub property_account: Account<'info, PropertyAccount>,
 
     #[account(mut)]
@@ -349,8 +360,8 @@ pub struct InitializeProperty<'info> {
     /// CHECK: NFT mint pubkey reference
     pub nft_mint: AccountInfo<'info>,
 
-    /// CHECK: Fraction mint (SPL) account to be created
-    #[account(mut)]
+    /// CHECK: Fraction mint (SPL) account to be created via CPI - must be signer for system create_account
+    #[account(mut, signer)]
     pub fraction_mint: AccountInfo<'info>,
 
     /// CHECK: Mint authority PDA for the fraction mint
@@ -485,15 +496,33 @@ pub struct DepositRent<'info> {
 pub struct ClaimRent<'info> {
     #[account(mut)]
     pub property_account: Account<'info, PropertyAccount>,
-    #[account(mut)]
+    
+    #[account(
+        init_if_needed,
+        payer = payer,
+        space = 8 + 32 + 32 + 8 + 16 + 16 + 1,
+        seeds = [b"holder", payer.key().as_ref(), property_account.key().as_ref()],
+        bump
+    )]
     pub holder_state: Account<'info, HolderState>,
+    
+    #[account(mut)]
+    pub payer: Signer<'info>,
+    
+    /// Holder's fraction token account - needed to get balance on first claim
+    pub holder_fraction_ata: Account<'info, TokenAccount>,
+    
     #[account(mut)]
     pub rent_vault_ata: Account<'info, TokenAccount>,
+    
     /// CHECK: rent_vault PDA (authority of rent_vault_ata)
     pub rent_vault: UncheckedAccount<'info>,
+    
     #[account(mut)]
     pub receiver_usdc: Account<'info, TokenAccount>,
+    
     pub token_program: Program<'info, Token>,
+    pub system_program: Program<'info, System>,
 }
 
 #[derive(Accounts)]
