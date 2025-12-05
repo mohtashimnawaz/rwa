@@ -8,6 +8,7 @@ import Navbar from '@/components/Navbar';
 import { PublicKey } from '@solana/web3.js';
 import { BN } from '@coral-xyz/anchor';
 import * as token from '@solana/spl-token';
+import toast from 'react-hot-toast';
 
 interface PropertyData {
   authority: PublicKey;
@@ -83,10 +84,61 @@ export default function PropertyDetailsPage() {
     }
   };
 
+  const handleBuyFractions = async () => {
+    if (!program || !publicKey || !property || !buyAmount) return;
+    
+    const amount = Number(buyAmount);
+    if (amount <= 0 || amount > available) {
+      toast.error('Invalid amount');
+      return;
+    }
+
+    setProcessing(true);
+    const toastId = toast.loading('Minting fractions...');
+    
+    try {
+      // Derive mint authority PDA
+      const [mintAuthorityPda] = PublicKey.findProgramAddressSync(
+        [Buffer.from('fraction_authority'), propertyAddress.toBuffer()],
+        program.programId
+      );
+
+      // Get or create user's fraction token account
+      const userFractionAccount = await token.getOrCreateAssociatedTokenAccount(
+        program.provider.connection,
+        publicKey as any, // Wallet adapter's publicKey is compatible
+        property.fractionMint,
+        publicKey
+      );
+
+      await program.methods
+        .mintFractions(new BN(amount))
+        .accountsPartial({
+          propertyAccount: propertyAddress,
+          fractionMint: property.fractionMint,
+          mintAuthority: mintAuthorityPda,
+          destination: userFractionAccount.address,
+          authority: publicKey,
+          tokenProgram: token.TOKEN_PROGRAM_ID,
+        })
+        .rpc();
+
+      toast.success(`Successfully purchased ${amount} fractions!`, { id: toastId });
+      setBuyAmount('');
+      fetchPropertyData();
+    } catch (error: any) {
+      console.error('Error buying fractions:', error);
+      toast.error(error.message || 'Failed to purchase fractions', { id: toastId });
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   const handleClaimRent = async () => {
     if (!program || !publicKey || !property) return;
     
     setProcessing(true);
+    const toastId = toast.loading('Claiming rent...');
     try {
       const [holderPda] = PublicKey.findProgramAddressSync(
         [Buffer.from('holder'), publicKey.toBuffer(), propertyAddress.toBuffer()],
@@ -117,11 +169,11 @@ export default function PropertyDetailsPage() {
         })
         .rpc();
 
-      alert('Rent claimed successfully!');
+      toast.success('Rent claimed successfully!', { id: toastId });
       fetchPropertyData();
     } catch (error: any) {
       console.error('Error claiming rent:', error);
-      alert(`Error: ${error.message}`);
+      toast.error(error.message || 'Failed to claim rent', { id: toastId });
     } finally {
       setProcessing(false);
     }
@@ -280,10 +332,11 @@ export default function PropertyDetailsPage() {
                 </div>
 
                 <button
-                  disabled={!buyAmount || Number(buyAmount) <= 0 || Number(buyAmount) > available}
+                  onClick={handleBuyFractions}
+                  disabled={processing || !buyAmount || Number(buyAmount) <= 0 || Number(buyAmount) > available}
                   className="w-full py-3 bg-gradient-to-r from-cyan-600 to-emerald-600 hover:from-cyan-700 hover:to-emerald-700 disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed text-white font-bold rounded-xl transition shadow-lg"
                 >
-                  Buy Fractions
+                  {processing ? 'Processing...' : 'Buy Fractions'}
                 </button>
               </div>
             )}

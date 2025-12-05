@@ -7,6 +7,7 @@ import Navbar from '@/components/Navbar';
 import { PublicKey } from '@solana/web3.js';
 import Link from 'next/link';
 import * as token from '@solana/spl-token';
+import toast from 'react-hot-toast';
 
 interface HoldingData {
   propertyAddress: string;
@@ -82,6 +83,7 @@ export default function DashboardPage() {
     if (!program || !publicKey) return;
     
     setClaiming(holding.propertyAddress);
+    const toastId = toast.loading('Claiming rent...');
     try {
       const propertyPubkey = new PublicKey(holding.propertyAddress);
       
@@ -114,11 +116,11 @@ export default function DashboardPage() {
         })
         .rpc();
 
-      alert('Rent claimed successfully!');
+      toast.success('Rent claimed successfully!', { id: toastId });
       fetchHoldings();
     } catch (error: any) {
       console.error('Error claiming rent:', error);
-      alert(`Error: ${error.message}`);
+      toast.error(error.message || 'Failed to claim rent', { id: toastId });
     } finally {
       setClaiming(null);
     }

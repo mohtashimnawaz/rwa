@@ -8,6 +8,7 @@ import { PublicKey, Keypair, SystemProgram } from '@solana/web3.js';
 import { BN } from '@coral-xyz/anchor';
 import * as token from '@solana/spl-token';
 import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
 
 export default function CreatePropertyPage() {
   const { program } = useAnchor();
@@ -23,11 +24,12 @@ export default function CreatePropertyPage() {
     e.preventDefault();
     
     if (!program || !publicKey) {
-      alert('Please connect your wallet');
+      toast.error('Please connect your wallet');
       return;
     }
 
     setProcessing(true);
+    const toastId = toast.loading('Creating property...');
     try {
       const nftMintPubkey = new PublicKey(nftMint);
       const fractions = new BN(totalFractions);
@@ -117,11 +119,11 @@ export default function CreatePropertyPage() {
         .signers([propertyKeypair, fractionMint, usdcMintKeypair])
         .rpc();
 
-      alert('Property created successfully!');
+      toast.success('Property created successfully!', { id: toastId });
       router.push(`/property/${propertyKeypair.publicKey.toString()}`);
     } catch (error: any) {
       console.error('Error creating property:', error);
-      alert(`Error: ${error.message}`);
+      toast.error(error.message || 'Failed to create property', { id: toastId });
     } finally {
       setProcessing(false);
     }
