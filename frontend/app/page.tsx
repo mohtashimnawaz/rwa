@@ -46,14 +46,15 @@ export default function Home() {
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             {/* Left Content */}
             <div>
-              <div className="inline-block mb-4 px-4 py-2 bg-cyan-500/10 border border-cyan-500/20 rounded-full">
-                <span className="text-cyan-400 text-sm font-medium">Built on Solana</span>
+              <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 bg-cyan-500/10 border border-cyan-500/20 rounded-full">
+                <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></div>
+                <span className="text-cyan-400 text-sm font-bold tracking-wide">LIVE ON SOLANA</span>
               </div>
               
               <h1 className="text-6xl md:text-7xl font-black mb-6 leading-tight">
-                Own Real Estate
-                <span className="block bg-gradient-to-r from-cyan-400 to-emerald-400 text-transparent bg-clip-text">
-                  One Fraction at a Time
+                <span className="inline-block animate-pulse">⚡</span> Own Real Estate
+                <span className="block bg-gradient-to-r from-cyan-400 via-emerald-400 to-teal-400 text-transparent bg-clip-text animate-gradient">
+                  One Token at a Time
                 </span>
               </h1>
               
@@ -225,11 +226,20 @@ export default function Home() {
       {/* Footer */}
       <footer className="border-t border-white/5 py-12 mt-24">
         <div className="max-w-7xl mx-auto px-4 text-center">
-          <div className="flex items-center justify-center gap-2 text-gray-400 mb-4">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-            <span>Live on Solana Devnet</span>
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <div className="w-8 h-8 bg-gradient-to-br from-cyan-600 to-emerald-600 rounded-lg flex items-center justify-center">
+              <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" strokeLinecap="round" strokeLinejoin="round"/>
+                <polyline points="9 22 9 12 15 12 15 22" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+            <span className="text-lg font-black text-white">RWA PROTOCOL</span>
           </div>
-          <p className="text-gray-600 text-sm">Built with Anchor Framework • Open Source</p>
+          <div className="flex items-center justify-center gap-2 text-gray-400 mb-2">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            <span className="text-sm">Live on Solana Devnet</span>
+          </div>
+          <p className="text-gray-600 text-sm">Decentralized Real Estate • Built with Anchor • Open Source</p>
         </div>
       </footer>
     </div>
