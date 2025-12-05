@@ -1,0 +1,837 @@
+{
+  "address": "DYMKJAp7o44QC7ZwB6JFbJY4mkDDtoAMbrwsTCrZqcj3",
+  "metadata": {
+    "name": "rwa",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Created with Anchor"
+  },
+  "instructions": [
+    {
+      "name": "burn_fractions",
+      "docs": [
+        "Burn fractions: holder burns their fraction tokens, reducing total supply.",
+        "This is typically used when closing or liquidating a property."
+      ],
+      "discriminator": [
+        112,
+        169,
+        53,
+        68,
+        208,
+        84,
+        225,
+        12
+      ],
+      "accounts": [
+        {
+          "name": "property_account",
+          "writable": true
+        },
+        {
+          "name": "holder",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "holder_state",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  104,
+                  111,
+                  108,
+                  100,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "holder"
+              },
+              {
+                "kind": "account",
+                "path": "property_account"
+              }
+            ]
+          }
+        },
+        {
+          "name": "fraction_mint",
+          "writable": true
+        },
+        {
+          "name": "holder_fraction_ata",
+          "writable": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "buy_fractions",
+      "docs": [
+        "Buy fractions: buyer pays USDC to seller, program transfers fraction tokens",
+        "from seller to buyer. Both buyer and seller holder accounting is updated."
+      ],
+      "discriminator": [
+        251,
+        104,
+        152,
+        46,
+        70,
+        130,
+        211,
+        220
+      ],
+      "accounts": [
+        {
+          "name": "property_account",
+          "writable": true
+        },
+        {
+          "name": "buyer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "seller",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "buyer_usdc",
+          "writable": true
+        },
+        {
+          "name": "seller_usdc",
+          "writable": true
+        },
+        {
+          "name": "buyer_fraction_ata",
+          "writable": true
+        },
+        {
+          "name": "seller_fraction_ata",
+          "writable": true
+        },
+        {
+          "name": "buyer_holder",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  104,
+                  111,
+                  108,
+                  100,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "buyer"
+              },
+              {
+                "kind": "account",
+                "path": "property_account"
+              }
+            ]
+          }
+        },
+        {
+          "name": "seller_holder",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  104,
+                  111,
+                  108,
+                  100,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "seller"
+              },
+              {
+                "kind": "account",
+                "path": "property_account"
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "fraction_amount",
+          "type": "u64"
+        },
+        {
+          "name": "price",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "claim_rent",
+      "docs": [
+        "Claim rent for a holder: pay out unclaimed + newly accrued amount."
+      ],
+      "discriminator": [
+        57,
+        233,
+        51,
+        137,
+        102,
+        101,
+        26,
+        101
+      ],
+      "accounts": [
+        {
+          "name": "property_account",
+          "writable": true
+        },
+        {
+          "name": "holder_state",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  104,
+                  111,
+                  108,
+                  100,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "payer"
+              },
+              {
+                "kind": "account",
+                "path": "property_account"
+              }
+            ]
+          }
+        },
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "holder_fraction_ata",
+          "docs": [
+            "Holder's fraction token account - needed to get balance on first claim"
+          ]
+        },
+        {
+          "name": "rent_vault_ata",
+          "writable": true
+        },
+        {
+          "name": "rent_vault"
+        },
+        {
+          "name": "receiver_usdc",
+          "writable": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "deposit_nft_into_vault",
+      "docs": [
+        "Deposit the NFT into the escrow vault PDA. The client should transfer",
+        "the NFT (SPL token with supply=1) into `nft_vault_ata` which is",
+        "owned by the `nft_vault` PDA. This instruction verifies ownership."
+      ],
+      "discriminator": [
+        128,
+        117,
+        105,
+        170,
+        250,
+        64,
+        96,
+        236
+      ],
+      "accounts": [
+        {
+          "name": "property_account",
+          "writable": true
+        },
+        {
+          "name": "nft_mint",
+          "relations": [
+            "property_account"
+          ]
+        },
+        {
+          "name": "nft_vault_ata",
+          "docs": [
+            "Token account holding the NFT (owned by nft_vault PDA)"
+          ],
+          "writable": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "deposit_rent",
+      "docs": [
+        "Deposit rent (USDC) into RentVault PDA and update cumulative rent per share."
+      ],
+      "discriminator": [
+        54,
+        14,
+        183,
+        244,
+        81,
+        178,
+        23,
+        27
+      ],
+      "accounts": [
+        {
+          "name": "property_account",
+          "writable": true
+        },
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "payer_usdc",
+          "writable": true
+        },
+        {
+          "name": "rent_vault_ata",
+          "writable": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "initialize_property",
+      "docs": [
+        "Initialize a property account and related PDAs: creates the fraction mint",
+        "and associated rent/nft vault token accounts (ATAs) owned by PDAs."
+      ],
+      "discriminator": [
+        94,
+        188,
+        21,
+        36,
+        186,
+        50,
+        195,
+        141
+      ],
+      "accounts": [
+        {
+          "name": "property_account",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "nft_mint"
+        },
+        {
+          "name": "fraction_mint",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "mint_authority",
+          "docs": [
+            "seeds: [\"fraction_authority\", property_account]"
+          ]
+        },
+        {
+          "name": "rent_vault"
+        },
+        {
+          "name": "nft_vault"
+        },
+        {
+          "name": "rent_vault_ata",
+          "docs": [
+            "Associated token accounts (should be created client-side)"
+          ]
+        },
+        {
+          "name": "nft_vault_ata"
+        },
+        {
+          "name": "usdc_mint",
+          "docs": [
+            "The USDC mint used for rent collection"
+          ]
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "rent",
+          "address": "SysvarRent111111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "metadata_uri",
+          "type": {
+            "array": [
+              "u8",
+              200
+            ]
+          }
+        },
+        {
+          "name": "total_fractions",
+          "type": "u64"
+        },
+        {
+          "name": "fraction_decimal",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "mint_fractions",
+      "docs": [
+        "Mint fractions into owner's fraction token account. Only property authority may call."
+      ],
+      "discriminator": [
+        131,
+        213,
+        185,
+        64,
+        148,
+        91,
+        219,
+        69
+      ],
+      "accounts": [
+        {
+          "name": "property_account",
+          "writable": true
+        },
+        {
+          "name": "fraction_mint",
+          "writable": true
+        },
+        {
+          "name": "mint_authority"
+        },
+        {
+          "name": "destination",
+          "writable": true
+        },
+        {
+          "name": "authority",
+          "signer": true,
+          "relations": [
+            "property_account"
+          ]
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "rent",
+          "address": "SysvarRent111111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "transfer_fractions",
+      "docs": [
+        "Transfer fractions between two holders. All transfers must go through",
+        "the program to correctly update reward accounting."
+      ],
+      "discriminator": [
+        104,
+        234,
+        21,
+        34,
+        172,
+        192,
+        226,
+        103
+      ],
+      "accounts": [
+        {
+          "name": "property_account",
+          "writable": true
+        },
+        {
+          "name": "source_holder",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  104,
+                  111,
+                  108,
+                  100,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "source_owner"
+              },
+              {
+                "kind": "account",
+                "path": "property_account"
+              }
+            ]
+          }
+        },
+        {
+          "name": "dest_holder",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  104,
+                  111,
+                  108,
+                  100,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "dest_owner"
+              },
+              {
+                "kind": "account",
+                "path": "property_account"
+              }
+            ]
+          }
+        },
+        {
+          "name": "source_fraction_ata",
+          "writable": true
+        },
+        {
+          "name": "dest_fraction_ata",
+          "writable": true
+        },
+        {
+          "name": "source_owner",
+          "signer": true
+        },
+        {
+          "name": "dest_owner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "unlock_nft",
+      "docs": [
+        "Unlock NFT from escrow vault: only allowed when all fractions are burned.",
+        "Transfers the NFT back to the property authority."
+      ],
+      "discriminator": [
+        162,
+        144,
+        82,
+        231,
+        137,
+        85,
+        213,
+        0
+      ],
+      "accounts": [
+        {
+          "name": "property_account",
+          "writable": true
+        },
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "nft_mint"
+        },
+        {
+          "name": "fraction_mint",
+          "writable": true
+        },
+        {
+          "name": "nft_vault"
+        },
+        {
+          "name": "nft_vault_ata",
+          "writable": true
+        },
+        {
+          "name": "authority_nft_ata",
+          "writable": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": []
+    }
+  ],
+  "accounts": [
+    {
+      "name": "HolderState",
+      "discriminator": [
+        222,
+        82,
+        176,
+        75,
+        3,
+        75,
+        155,
+        184
+      ]
+    },
+    {
+      "name": "PropertyAccount",
+      "discriminator": [
+        193,
+        89,
+        151,
+        121,
+        84,
+        43,
+        4,
+        71
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "NumericOverflow",
+      "msg": "Numeric overflow occurred"
+    },
+    {
+      "code": 6001,
+      "name": "Unauthorized",
+      "msg": "Unauthorized"
+    },
+    {
+      "code": 6002,
+      "name": "InvalidNftVaultAmount",
+      "msg": "Invalid NFT vault amount"
+    },
+    {
+      "code": 6003,
+      "name": "NoFractions",
+      "msg": "No fractions minted"
+    },
+    {
+      "code": 6004,
+      "name": "NoPendingRewards",
+      "msg": "No pending rewards"
+    },
+    {
+      "code": 6005,
+      "name": "InsufficientFunds",
+      "msg": "Insufficient fraction balance"
+    },
+    {
+      "code": 6006,
+      "name": "FractionsNotBurned",
+      "msg": "Fractions must be fully burned before unlocking NFT"
+    },
+    {
+      "code": 6007,
+      "name": "MetadataUriTooLong",
+      "msg": "Metadata URI exceeds 200 bytes"
+    }
+  ],
+  "types": [
+    {
+      "name": "HolderState",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "holder",
+            "type": "pubkey"
+          },
+          {
+            "name": "property",
+            "type": "pubkey"
+          },
+          {
+            "name": "balance",
+            "type": "u64"
+          },
+          {
+            "name": "reward_debt",
+            "type": "u128"
+          },
+          {
+            "name": "unclaimed",
+            "type": "u128"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PropertyAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "property_key",
+            "type": "pubkey"
+          },
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "nft_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "fraction_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "total_fractions",
+            "type": "u64"
+          },
+          {
+            "name": "minted_fractions",
+            "type": "u64"
+          },
+          {
+            "name": "fraction_decimal",
+            "type": "u8"
+          },
+          {
+            "name": "cum_rent_per_share",
+            "type": "u128"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "metadata_uri",
+            "type": {
+              "array": [
+                "u8",
+                200
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
