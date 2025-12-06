@@ -154,19 +154,27 @@ export default function Home() {
 
       {/* Marquee Section */}
       <section className="py-12 border-y border-white/5 overflow-hidden">
-        <div className="animate-marquee whitespace-nowrap">
-          <span className="inline-block mx-8 text-gray-600 font-bold text-lg">FRACTIONAL OWNERSHIP</span>
-          <span className="inline-block mx-8 text-gray-600 font-bold text-lg">•</span>
-          <span className="inline-block mx-8 text-gray-600 font-bold text-lg">INSTANT LIQUIDITY</span>
-          <span className="inline-block mx-8 text-gray-600 font-bold text-lg">•</span>
-          <span className="inline-block mx-8 text-gray-600 font-bold text-lg">AUTO RENT DISTRIBUTION</span>
-          <span className="inline-block mx-8 text-gray-600 font-bold text-lg">•</span>
-          <span className="inline-block mx-8 text-gray-600 font-bold text-lg">ZERO MIDDLEMEN</span>
-          <span className="inline-block mx-8 text-gray-600 font-bold text-lg">•</span>
-          <span className="inline-block mx-8 text-gray-600 font-bold text-lg">FRACTIONAL OWNERSHIP</span>
-          <span className="inline-block mx-8 text-gray-600 font-bold text-lg">•</span>
-          <span className="inline-block mx-8 text-gray-600 font-bold text-lg">INSTANT LIQUIDITY</span>
-          <span className="inline-block mx-8 text-gray-600 font-bold text-lg">•</span>
+        <div className="flex">
+          <div className="flex whitespace-nowrap animate-marquee">
+            <span className="inline-block mx-8 text-gray-600 font-bold text-lg">FRACTIONAL OWNERSHIP</span>
+            <span className="inline-block mx-8 text-gray-600 font-bold text-lg">•</span>
+            <span className="inline-block mx-8 text-gray-600 font-bold text-lg">INSTANT LIQUIDITY</span>
+            <span className="inline-block mx-8 text-gray-600 font-bold text-lg">•</span>
+            <span className="inline-block mx-8 text-gray-600 font-bold text-lg">AUTO RENT DISTRIBUTION</span>
+            <span className="inline-block mx-8 text-gray-600 font-bold text-lg">•</span>
+            <span className="inline-block mx-8 text-gray-600 font-bold text-lg">ZERO MIDDLEMEN</span>
+            <span className="inline-block mx-8 text-gray-600 font-bold text-lg">•</span>
+          </div>
+          <div className="flex whitespace-nowrap animate-marquee" aria-hidden="true">
+            <span className="inline-block mx-8 text-gray-600 font-bold text-lg">FRACTIONAL OWNERSHIP</span>
+            <span className="inline-block mx-8 text-gray-600 font-bold text-lg">•</span>
+            <span className="inline-block mx-8 text-gray-600 font-bold text-lg">INSTANT LIQUIDITY</span>
+            <span className="inline-block mx-8 text-gray-600 font-bold text-lg">•</span>
+            <span className="inline-block mx-8 text-gray-600 font-bold text-lg">AUTO RENT DISTRIBUTION</span>
+            <span className="inline-block mx-8 text-gray-600 font-bold text-lg">•</span>
+            <span className="inline-block mx-8 text-gray-600 font-bold text-lg">ZERO MIDDLEMEN</span>
+            <span className="inline-block mx-8 text-gray-600 font-bold text-lg">•</span>
+          </div>
         </div>
       </section>
 
