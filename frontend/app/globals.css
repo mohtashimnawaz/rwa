@@ -40,6 +40,53 @@ body {
   }
 }
 
+@keyframes tubelight {
+  0% {
+    opacity: 0;
+    text-shadow: none;
+  }
+  10% {
+    opacity: 0.3;
+    text-shadow: 0 0 5px rgba(0, 146, 181, 0.3);
+  }
+  15% {
+    opacity: 0;
+    text-shadow: none;
+  }
+  25% {
+    opacity: 0.6;
+    text-shadow: 0 0 8px rgba(0, 146, 181, 0.4);
+  }
+  30% {
+    opacity: 0.2;
+    text-shadow: 0 0 3px rgba(0, 146, 181, 0.2);
+  }
+  40% {
+    opacity: 0.8;
+    text-shadow: 0 0 10px rgba(0, 146, 181, 0.5);
+  }
+  45% {
+    opacity: 0.4;
+    text-shadow: 0 0 5px rgba(0, 146, 181, 0.3);
+  }
+  55% {
+    opacity: 0.9;
+    text-shadow: 0 0 12px rgba(0, 146, 181, 0.6);
+  }
+  60% {
+    opacity: 0.7;
+    text-shadow: 0 0 8px rgba(0, 146, 181, 0.5);
+  }
+  70% {
+    opacity: 1;
+    text-shadow: 0 0 10px rgba(0, 146, 181, 0.5);
+  }
+  100% {
+    opacity: 1;
+    text-shadow: 0 0 10px rgba(0, 146, 181, 0.5);
+  }
+}
+
 .animate-float {
   animation: float 6s ease-in-out infinite;
 }
@@ -53,6 +100,35 @@ body {
   animation: marquee 20s linear infinite;
   will-change: transform;
   flex-shrink: 0;
+}
+
+.signature-watermark {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 9999;
+  font-family: monospace;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 8px 16px;
+  background: rgba(0, 0, 0, 0.8);
+  border: 1px solid rgba(0, 146, 181, 0.3);
+  border-radius: 8px;
+  color: rgba(0, 146, 181, 0.9);
+  text-decoration: none;
+  text-shadow: 0 0 10px rgba(0, 146, 181, 0.5);
+  transition: all 0.3s ease;
+  animation: tubelight 3s ease-in-out;
+  backdrop-filter: blur(12px);
+  letter-spacing: 0.05em;
+}
+
+.signature-watermark:hover {
+  color: rgba(0, 146, 181, 1);
+  text-shadow: 0 0 20px rgba(0, 146, 181, 0.8), 0 0 30px rgba(0, 146, 181, 0.6);
+  border-color: rgba(0, 146, 181, 0.6);
+  transform: translateY(-2px);
+  background: rgba(0, 0, 0, 0.9);
 }
 
 .perspective-1000 {

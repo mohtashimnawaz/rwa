@@ -54,6 +54,14 @@ export default function RootLayout({
                 },
               }}
             />
+            <a 
+              href="https://portfolio-main-sooty-mu.vercel.app" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="signature-watermark"
+            >
+              by nwz
+            </a>
           </AnchorContextProvider>
         </WalletContextProvider>
       </body>
